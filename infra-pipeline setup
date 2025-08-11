@@ -1,0 +1,98 @@
+trigger:  none
+
+pool:  devkapool
+variables:  
+  souravconfig : '$(System.DefaultWorkingDirectory)/environment'
+  serviceconnect : 'souravkumar'
+
+parameters:
+- name: terraforminstall
+  type: boolean
+  default: false
+
+- name: terraforminit
+  type: boolean
+  default: false
+
+- name: terraformvalidate
+  type: boolean
+  default: false
+
+- name: terraformplan
+  type: boolean
+  default: false
+
+- name: terraformapply
+  type: boolean
+  default: false
+
+- name: environment
+  type: string
+  default: dev
+  values:
+    - dev
+    - preprod
+    - prod
+
+
+# '$()' -- variable
+# '${{}}' -- parameter
+
+# task 1: terraform ko install karenge
+steps:
+  - task: TerraformInstaller@1
+    condition: ${{parameters.terraforminstall}}
+    inputs:
+      terraformVersion: 'latest'
+
+# task 2: terraform init
+
+  - task: TerraformTask@5
+    displayName: init hogaya
+    condition: ${{parameters.terraforminit}}
+    inputs:
+      provider: 'azurerm'
+      command: 'init'
+      workingDirectory: $(souravconfig)
+      backendServiceArm: $(serviceconnect)
+      backendAzureRmStorageAccountName: 'bappastatestorage'
+      backendAzureRmContainerName: 'statecontainer'
+      backendAzureRmKey: 'skk.tfstate'
+
+# task 3: terraform validate
+  - task: TerraformTask@5
+    displayName: validate hogaya
+    condition: ${{parameters.terraformvalidate}}
+    inputs:
+      provider: 'azurerm'
+      command: 'validate'
+      workingDirectory: $(souravconfig)
+
+# task 4: terraform plan
+  - task: TerraformTask@5
+    displayName: plan chalgaya
+    condition: ${{parameters.terraformplan}}
+    inputs:
+      provider: 'azurerm'
+      command: 'plan'
+      workingDirectory: $(souravconfig)
+      environmentServiceNameAzureRM:  $(serviceconnect)
+  - task: ManualValidation@1
+    inputs:
+      notifyUsers: 'Kuila.sourav1999@achintadutta04gmail.onmicrosoft.com'
+      approvers: 'Kuila.sourav1999@achintadutta04gmail.onmicrosoft.com'
+      instructions: 'review it properly'
+
+# task 5: terraform apply
+  - task: TerraformTask@5
+    displayName: apply chalgaya
+    condition: ${{parameters.terraformapply}}
+    inputs:
+      provider: 'azurerm'
+      command: 'apply'
+      workingDirectory: $(souravconfig)
+      environmentServiceNameAzureRM:  $(serviceconnect)
+
+
+  
+  
